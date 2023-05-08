@@ -640,8 +640,11 @@ components:
           type: string
           description: This field holds information about id of case.
         judgeName:
-          type: string
           description: This field holds information about name of judge.
+          type: array
+          items: 
+            type: string
+          
         hearingDate:
           type: integer
           description: This field holds information about date of hearing.
