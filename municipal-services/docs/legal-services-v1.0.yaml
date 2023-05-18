@@ -128,41 +128,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CaseListResponse'
+                $ref: '#/components/schemas/CaseDetailListResponse'
         400:
           description: Case(s) get failed
           content:
             application/json:
               schema:
                 $ref: 'https://raw.githubusercontent.com/egovernments/municipal-services/common-contract/docs/common-contract-v2-0-0.yml#/components/schemas/ErrorRes'
-  /_caseDetails:
-    post:
-      summary: search case requests.
-      parameters:
-        - name: caseId
-          in: query
-          required: true
-          schema:
-            type: string
         
-      responses:
-      ####################################################
-      # All errors will be returned with HTTP error code 400 with customized error code and messages. Consumer of the API need to handle 400 with customized error code and message
-      ###################################################
-        201:
-          description: ReponseInfo with case(s) updated sudcessfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CaseDetailListResponse'
-        400:
-          description: Case(s) updation failed
-          content:
-            application/json:
-              schema:
-                $ref: 'https://raw.githubusercontent.com/egovernments/municipal-services/common-contract/docs/common-contract-v2-0-0.yml#/components/schemas/ErrorRes'
-      tags:
-        - Case                
  
   /hearing/_create:
     post:
@@ -404,6 +377,10 @@ components:
           $ref: '#/components/schemas/Workflow'
         # parties:
         #   $ref: '#/definitions/Parties'
+      required:
+        - requestInfo
+        - case   
+        - workflow  
     
     CaseResponse:
       type: object
@@ -413,7 +390,9 @@ components:
           $ref: 'https://raw.githubusercontent.com/egovernments/egov-services/master/docs/common/contracts/v1-1-1.yml#/definitions/ResponseInfo'
         case:
           $ref: '#/components/schemas/Case'
-          
+      required:
+        - responseInfo
+        - case    
     CaseListResponse:
       type: object
       description: This object holds information about the case response
@@ -426,6 +405,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Case'
+      required:
+        - responseInfo
+        - caseList
+        - TotalCount
     CaseDetailListResponse:
       type: object
       description: This object holds information about the case response
@@ -445,7 +428,13 @@ components:
         JudgementList:
           type: array
           items:
-            $ref: '#/components/schemas/Judgement'    
+            $ref: '#/components/schemas/Judgement' 
+      required:
+        - responseInfo
+        - TotalCount   
+        - caseList  
+        - HearingList
+        - JudgementList
     HearingRequest:
       type: object
       description: This object holds information about the hearing request
@@ -454,8 +443,12 @@ components:
           $ref: 'https://raw.githubusercontent.com/egovernments/egov-services/master/docs/common/contracts/v1-1-1.yml#/definitions/RequestInfo'
         hearing:
           $ref: '#/components/schemas/Hearing'
-        workflow:
-          $ref: '#/components/schemas/Workflow'
+       # workflow:
+        #  $ref: '#/components/schemas/Workflow'
+      required:
+        - requestInfo
+        - hearing   
+        - workflow    
     HearingResponse:
       type: object
       description: This object holds information about the hearing response
@@ -464,6 +457,9 @@ components:
           $ref: 'https://raw.githubusercontent.com/egovernments/egov-services/master/docs/common/contracts/v1-1-1.yml#/definitions/ResponseInfo'
         hearing:
           $ref: '#/components/schemas/Hearing'
+      required:
+        - responseInfo
+        - hearing    
     HearingListResponse:
       type: object
       description: This object holds information about the hearingList response
@@ -476,6 +472,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Hearing'
+      required:
+        - responseInfo
+        - HearingList
+        - TotalCount
     JudgementRequest:
       type: object
       description: This object holds information about the case request
@@ -486,6 +486,10 @@ components:
           $ref: '#/components/schemas/Judgement'
         workflow:
           $ref: '#/components/schemas/Workflow'
+      required:
+        - requestInfo
+        - judgement   
+        - workflow
     JudgementResponse:
       type: object
       description: This object holds information about the case response
@@ -494,6 +498,9 @@ components:
           $ref: 'https://raw.githubusercontent.com/egovernments/egov-services/master/docs/common/contracts/v1-1-1.yml#/definitions/ResponseInfo'
         judgement:
           $ref: '#/components/schemas/Judgement'
+      required:
+        - responseInfo
+        - judgement    
     JudgementListResponse:
       type: object
       description: This object holds information about the case response
@@ -504,6 +511,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Judgement'
+      required:
+        - responseInfo
+        - JudgementList
 
    
     Case:
@@ -513,16 +523,24 @@ components:
           type: string
           description: This id is autogenerated id of the case. It is the primary key.
           readOnly: true
+          minLength: 2
+          maxLength: 64
         tenantId:
           type: string
           description: This is tenantId of the case.It is hard-coded in UI as MP as of now since we are only supporting this app for one state.
+          minLength: 2
+          maxLength: 64
         
         caseNumber:
           type: string
           description: Unique identity of the case formed by combination of three attributes [Case type + number + year] L.P.A.1233/2022
+          minLength: 2
+          maxLength: 128
         cnrNumber:
           type: string
           description: The CNR means Case Number Record. CNR is a unique 16 digit number given to all cases. To put it in short, it is the unique case identity number by which any Case can be identified. CNR is assigned to each Case filed through Case Information System. it is specific to eCourts websites.
+          minLength: 16
+          maxLength: 64
         parentCaseId:
           type: string
           description: This field holds information about id of the parent case if it is a child of that parent or else this value will be null.
@@ -533,32 +551,46 @@ components:
           description: This field holds information about hierarchy of case.
         type:
           type: string
-          description: Summary of case from Petition.    
+          description: Summary of case from Petition. 
+          minLength: 2
+          maxLength: 64
         category:
           type: string
           description: Wide variety of legal issue filed for example Pension, Promotion, Transfer etc.(Master Data)
+          minLength: 2
+          maxLength: 64
         filingNumber:
           type: string
           description: When a case is filed in Court,  Diary Number  immediately issued, It is a temporary number given to your filing. Subsequently, regular Case No will be issued.
+          minLength: 2
+          maxLength: 64
         filingDate:
           type: integer
           description: Date of case filing.
-        registrationDate:
-          type: integer
-          description: This field holds information about
-            Date of registration of the case.
+
         summary:
           type: string
           description: Summary of case from Petition.
+          minLength: 2
+          maxLength: 64
         arisingDetails:
           type: string
           description: This field hold information about ariging detail.
+          minLength: 2
+          maxLength: 64
         policyOrNonPolicyMatter:
           type: string
           description: Whether a case involves policy question as an issue to be decided - can be gathered from examination of petition.
         caseStatus:
           type: string
           description: Which type of case it is.(Master Data), Case status refers the Stage of the case.
+          minLength: 2
+          maxLength: 64
+        stage:
+          type: string
+          description: Which type of case it is.(Master Data), Case stage refers the Stage of the case.
+          minLength: 2
+          maxLength: 64  
         priority:
           type: string
           description: A matter that takes precedence over others. Flag matter as a priority case where Personal Appearance has been called from the Court or Fine Imposed or any matter that is marked by MO or Principal Secretary for urgent action.(Transactional)
@@ -580,9 +612,13 @@ components:
         recommendOic:
           type: string
           description: Concerning State officer is person who is dealing with particular type of case.(Master Data)
+          minLength: 2
+          maxLength: 64
         remarks:
           type: string
           description: This field holds information about remarks of case.
+          minLength: 2
+          maxLength: 128
         additionalDetails:
           type: string
           description: This field is meant to hold any extra information that we want to store for a case.
@@ -610,35 +646,50 @@ components:
         - category
         - number
         - filingDate
-        - registrationDate
         - caseStatus
         - stage
         - subStage
         - assignedOfficerId
         - hierarchy
+        - acts
+        - parties
+        - document
+        - court
          
     Hearing:
       type: object
+      description: this object holds information about hearing details.
       properties:
+       
         id:
           type: string
           description: This id is autogenerated id of the hearing. It is the primary key.
-          readOnly: true
+          minLength: 2
+          maxLength: 64
+          
         courtRoomNumber:
           type: string
           description: This field holds information about id of court.
+          minLength: 2
+          maxLength: 64
         bench:
           type: string
           description: not clear
+          minLength: 2
+          maxLength: 64
         tenantId:
           type: string
           description: This is tenantId of the case.It is hard-coded in UI as MP as of now since we are only supporting this app for one state.
+          minLength: 2
+          maxLength: 64
         hearingNumber:
           type: string
           description: This field holds information about number of Hearings
         caseId:
           type: string
           description: This field holds information about id of case.
+          minLength: 2
+          maxLength: 64
         judgeName:
           description: This field holds information about name of judge.
           type: array
@@ -657,6 +708,8 @@ components:
         requiredOfficer:
           type: string
           description: This field holds information about requiredOfficer for hearing.
+          minLength: 2
+          maxLength: 64
         affidavitFilingDueDate:
           type: integer
           description: This field holds information about filing due date of affidavit.
@@ -666,10 +719,14 @@ components:
         caseNumber:
           type: string
           description: This field holds the caseNumber.
+          minLength: 2
+          maxLength: 64
         oathNumber:
           type: string
           description: This field holds information about
             oath number.
+          minLength: 2
+          maxLength: 64
         nextHearingDate:
           type: integer
           description: This field holds Date of next hearing.
@@ -685,6 +742,8 @@ components:
         remarks:
           type: string
           description: This field holds information about remarks.
+          minLength: 2
+          maxLength: 128
         status:
           type: string
           description: This field holds information about 
@@ -722,24 +781,37 @@ components:
         # MDMS:
         #   type: object
         #   properties:    
+        - parties
+        - payment
     Judgement:
       type: object
+      description: this objects holds information about the judgement details.
       properties:
         id:
           type: string
           description: This judgement id is autogenerated.it is the primary key.
           readOnly: true
+          minLength: 2
+          maxLength: 64
         tenantId:
           type: string
           description: This is tenantId of the case.It is hard-coded in UI as MP as of now since we are only supporting this app for one state.
+          minLength: 2
+          maxLength: 64
         caseId:
           type: string
           description: This field holds information about caseId for judgement.
+          minLength: 2
+          maxLength: 64
         hearingId:
           type: string
+          minLength: 2
+          maxLength: 64
         orderType:
           type: string
           description: This field holds information about order type.(Master data)
+          minLength: 2
+          maxLength: 64
         orderDate:
           type: integer
           description: This field holds information about
@@ -748,6 +820,8 @@ components:
           type: string
           description: This field holds information about
             Status of decision.(Master data)
+          minLength: 2
+          maxLength: 64
         complianceDate:
           type: integer
           description: This field holds information about
@@ -760,17 +834,25 @@ components:
           type: string
           description: This field holds information about
             override of order No.
+          minLength: 2
+          maxLength: 64
         revisedComplainceReason:
           type: string
           description: This field holds information about
             reason of  revisedcComplaince.
+          minLength: 2
+          maxLength: 64  
         complianceStatus:
           type: string
           description: This field holds information about
             status of compliance.(Master data)
+          minLength: 2
+          maxLength: 64  
         remarks:
           type: string
           description: This field holds information about remarks
+          minLength: 2
+          maxLength: 128
         additionalDetails:
           type: string
           description: This field is meant to hold any extra information that we want to store for a judgement.
@@ -805,16 +887,19 @@ components:
   
     Document:
       type: object
+      description: this objects holds information about the documents details.
       properties:
         id:
           type: string
           readOnly: true
-        caseId:
-          type: string
         documentType:
           type: string
+          minLength: 2
+          maxLength: 64  
         fileStoreId:
           type: string
+          minLength: 2
+          maxLength: 64
         status:
           type: string
           description: This field holds information about status.
@@ -834,37 +919,58 @@ components:
               type: integer
               description: This field is autogenerated for last modified time.
       required:
-        - caseId
         - documentType
         - fileStoreId
     Party:
         type: object
+        description: this objects holds information about the party details.
         properties:
           id:
             type: string
             description: This id is autogenerated id of the case. It is the primary key.
             readOnly: true
+            minLength: 2
+            maxLength: 64
           caseId:
             type: string
+            minLength: 2
+            maxLength: 64
           advocateId:
             type: string
+            minLength: 2
+            maxLength: 64
           firstName:
             type: string
+            minLength: 2
+            maxLength: 64
           lastName:
             type: string
+            minLength: 2
+            maxLength: 64
           gender:
             type: string
+            minLength: 2
+            maxLength: 64
           petitionerType:
             type: string
+            minLength: 2
+            maxLength: 64
           address:
             type: string
+            minLength: 2
+            maxLength: 128
           departmentName:
             type: string
+            minLength: 2
+            maxLength: 64
           contactNumber:
-            type: string  
+            type: string 
+            maxLength: 64
           partyType:
             type: string
             description: This field holds imformation about type of respondent.(Master Data)
+            minLength: 2
+            maxLength: 64
           advocate:  
             type: array
             items:
@@ -886,18 +992,28 @@ components:
               lastModifiedTime:
                 type: integer
                 description: This field is autogenerated for last modified time.   
-          
+        required:
+          - advocate
     Advocate:
         type: object
+        description: this objects holds information about the advocate details.
         properties:
           id:
             type: string
+            minLength: 2
+            maxLength: 64
           firstName:
             type: string
+            minLength: 2
+            maxLength: 64
           lastName:
             type: string
+            minLength: 2
+            maxLength: 64
           contactNumber:
             type: string
+            minLength: 2
+            maxLength: 64
           status:
             type: string
           auditdetails:
@@ -919,6 +1035,7 @@ components:
       
     Act:
         type: object
+        description: this objects holds information about the act details.
         properties:
           id:
             type: string
@@ -926,14 +1043,20 @@ components:
             readOnly: true
           caseId:
             type: string
+            minLength: 2
+            maxLength: 64
           actName:
             type: string
             description: This field holds information about actName of case.
+            minLength: 2
+            maxLength: 64
           sectionNumber:
             type: array
             description: This field holds information about Number of section of the case.(Change to array)
             items:
               type: string
+            minLength: 2
+            maxLength: 64  
           status:
             type: string
             description: This field holds information about status.
@@ -958,6 +1081,7 @@ components:
           - sectionNumber 
     Court:
       type: object
+      description: this objects holds information about the court details.
       properties:
         id:
           type: string
@@ -966,17 +1090,24 @@ components:
         courtName:
           type: string
           description: Supreme Court, Concerned High Court, District Courts, Tribunals etc.
+          minLength: 2
+          maxLength: 64
         district:
           type: string
           description: District in which the matter has arose. 
-  
+          minLength: 2
+          maxLength: 64
         state:
           type: string
           description: State Name e.g. Madhya Pradesh.
+          minLength: 2
+          maxLength: 64
         division:
           type: string
           description: This field holds information about
             division of court.(Master data)
+          minLength: 2
+          maxLength: 64  
         status:
           type: string
           description: This field holds information about status.
@@ -986,10 +1117,11 @@ components:
             - DRAFTED
         auditdetails:
           type: object
+          description: this objects holds information about the audit details.
           properties:
             createdBy:
               type: string
-              description: This field is autogenerated for reatedBy user.
+              description: This field is autogenerated for createdBy user.
             lastModifiedBy:
               type: string
               description: This field is autogenerated for lastModifiedBy user.
@@ -1008,6 +1140,7 @@ components:
         - division  
     Payment:
       type: object
+      description: this objects hold information about the payment details.
       properties:
         id:
           type: string
@@ -1027,6 +1160,7 @@ components:
             amount of fine. 
     Workflow:
       type: object
+      description: this objects holds information about the workflow details.
       properties:
         action:
           type: string
@@ -1047,14 +1181,20 @@ components:
         category:
           type: string
           description: Wide variety of legal issue filed for example Pension, Promotion, Transfer etc.(Master Data)
+          minLength: 2
+          maxLength: 64
         caseStatus:
           type: string
         department:
           type: string
           description: This field holds information about name of department.(Master data)
+          minLength: 2
+          maxLength: 64
         recommendOic:
           type: string
-          description: Concerning State officer is person who is dealing with particular type of case.(Master Data).    
+          description: Concerning State officer is person who is dealing with particular type of case.(Master Data).  
+          minLength: 2
+          maxLength: 64
 
 tags:
   - name: Case
